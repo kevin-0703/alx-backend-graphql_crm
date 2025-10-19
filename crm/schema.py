@@ -10,6 +10,12 @@ class CustomerType(DjangoObjectType):
     class Meta:
         model = Customer
 
+class Query(graphene.ObjectType):
+    all_customers = graphene.List(CustomerType)
+
+    def resolve_all_customers(self, info):
+        return Customer.objects.all()
+
 class CreateCustomer(graphene.Mutation):
     customer = graphene.Field(CustomerType)
     message = graphene.String()
