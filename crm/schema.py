@@ -3,6 +3,27 @@ from graphene_django.types import DjangoObjectType
 from .models import Customer, Product, Order
 from django.core.exceptions import ValidationError
 import re
+from graphene_django.filter import DjangoFilterConnectionField
+from .filters import CustomerFilter, ProductFilter, OrderFilter
+
+class CustomerNode(DjangoObjectType):
+    class Meta:
+        model = Customer
+        filterset_class = CustomerFilter
+        interfaces = (graphene.relay.Node,)
+
+class ProductNode(DjangoObjectType):
+    class Meta:
+        model = Product
+        filterset_class = ProductFilter
+        interfaces = (graphene.relay.Node,)
+
+class OrderNode(DjangoObjectType):
+    class Meta:
+        model = Order
+        filterset_class = OrderFilter
+        interfaces = (graphene.relay.Node,)
+
 
 class CRMQuery(graphene.ObjectType):
     hello = graphene.String(default_value="Hello, GraphQL!")
@@ -11,7 +32,9 @@ class CustomerType(DjangoObjectType):
         model = Customer
 
 class Query(graphene.ObjectType):
-    all_customers = graphene.List(CustomerType)
+    all_customers = DjangoFilterConnectionField(CustomerNode)
+    all_products = DjangoFilterConnectionField(ProductNode)
+    all_orders = DjangoFilterConnectionField(OrderNode)
 
     def resolve_all_customers(self, info):
         return Customer.objects.all()
