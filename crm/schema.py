@@ -3,7 +3,7 @@ from graphene_django.types import DjangoObjectType
 from .models import Customer, Product, Order
 from django.core.exceptions import ValidationError
 import re
-from crm.models import Produc
+from crm.models import Product
 from graphene_django.filter import DjangoFilterConnectionField
 from .filters import CustomerFilter, ProductFilter, OrderFilter
 
