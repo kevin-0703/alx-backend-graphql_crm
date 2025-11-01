@@ -1,31 +1,36 @@
-import datetime
-import requests
+from datetime import datetime
+from gql import gql, Client
+from gql.transport.requests import RequestsHTTPTransport
 
 def log_crm_heartbeat():
-    """
-    Logs a heartbeat message every 5 minutes to confirm CRM system health.
-    Optionally checks the GraphQL endpoint's responsiveness.
-    """
-    log_path = "/tmp/crm_heartbeat_log.txt"
-    timestamp = datetime.datetime.now().strftime("%d/%m/%Y-%H:%M:%S")
+    # Step 1: Prepare timestamp
+    current_time = datetime.now().strftime("%d/%m/%Y-%H:%M:%S")
 
-    # Default message
-    message = f"{timestamp} CRM is alive"
+    # Step 2: Initialize GraphQL client
+    transport = RequestsHTTPTransport(
+        url="http://localhost:8000/graphql",
+        verify=False,  # disable SSL verification for localhost
+        retries=3,
+    )
 
-    # Optional: Verify GraphQL hello field
+    client = Client(transport=transport, fetch_schema_from_transport=False)
+
+    # Step 3: Define simple GraphQL query
+    query = gql("""
+        query {
+            hello
+        }
+    """)
+
+    # Step 4: Execute query safely
     try:
-        response = requests.post(
-            "http://localhost:8000/graphql",
-            json={"query": "{ hello }"},
-            timeout=5
-        )
-        if response.status_code == 200 and "Hello, GraphQL!" in response.text:
-            message += "  GraphQL endpoint OK"
-        else:
-            message += f" ⚠️ GraphQL endpoint returned status {response.status_code}"
+        response = client.execute(query)
+        message = f"{current_time} CRM is alive - GraphQL hello: {response.get('hello', 'No response')}"
     except Exception as e:
-        message += f" GraphQL check failed: {e}"
+        message = f"{current_time} CRM heartbeat failed - {str(e)}"
 
-    # Append log message
-    with open(log_path, "a") as log:
-        log.write(message + "\n")
+    # Step 5: Append log message to file
+    with open("/tmp/crm_heartbeat_log.txt", "a") as log_file:
+        log_file.write(message + "\n")
+
+    print(message)
